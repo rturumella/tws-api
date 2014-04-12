@@ -1,21 +1,24 @@
 //Node Module
 var fs = require('fs');
 var util = require('util');
+var _ = require('underscore');
 //Server Modules
 var bunyan = require('bunyan');
 var restify = require('restify');
+var Sequelize = require('sequelize');
 var tws = require('./lib');
 
 // Globals
 
-var APP_NAME = (process.env.APP_NAME || 'tws-api')
-var PORT = (process.env.PORT || '8080')
+var ENV = process.env;
+var APP_NAME = (ENV.APP_NAME || 'tws-api')
+var PORT = (ENV.PORT || '8080')
 
 var LOGGER = bunyan.createLogger({
   name: APP_NAME,
   streams: [
     {
-      level: (process.env.LOG_LEVEL || 'info'),
+      level: (ENV.LOG_LEVEL || 'info'),
       stream: process.stderr
     },
     {
@@ -32,11 +35,27 @@ var LOGGER = bunyan.createLogger({
   serializers: restify.bunyan.serializers
 });
 
+DB_CONF = function() {
+  var conf = require('./config/db_config.json')[(ENV.NODE_ENV || 'development')];
+  ['username', 'database', 'password', 'host', 'port'].forEach(function(itm) {
+    if(itm in conf) {
+      conf[itm] = (ENV["PG_"+itm.toUpperCase()] || conf[itm] || null)
+    }
+  });
+  return conf;
+}();
+
+var DB = new Sequelize(DB_CONF.database, DB_CONF.username, DB_CONF.password, {
+  logging: function(msg) { LOGGER.debug(msg) },
+  dialect: (DB_CONF.dialect || 'postgres'),
+  port: (DB_CONF.port || 5432)
+});
 
 (function main() {
   var server = tws.createServer({
     log: LOGGER,
-    name: APP_NAME
+    name: APP_NAME,
+    db: DB
   });
   server.listen(PORT, function onListening() {
     LOGGER.debug('Listening at %s', server.url);
