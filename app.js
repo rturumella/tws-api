@@ -36,7 +36,7 @@ var LOGGER = bunyan.createLogger({
 });
 
 DB_CONF = function() {
-  var conf = require('./config/db_config.json')[ENV.NODE_ENV];
+  var conf = require('./config/db_config.json')[(ENV.NODE_ENV || 'development')];
   ['username', 'database', 'password', 'host', 'port'].forEach(function(itm) {
     if(itm in conf) {
       conf[itm] = (ENV["PG_"+itm.toUpperCase()] || conf[itm] || null)
@@ -45,12 +45,11 @@ DB_CONF = function() {
   return conf;
 }();
 
-LOGGER.debug(DB_CONF)
 var DB = new Sequelize(DB_CONF.database, DB_CONF.username, DB_CONF.password, {
   logging: function(msg) { LOGGER.debug(msg) },
-  dialect: DB_CONF.dialect || 'postgres',
-  port: DB_CONF.port || 3306
-})
+  dialect: (DB_CONF.dialect || 'postgres'),
+  port: (DB_CONF.port || 5432)
+});
 
 (function main() {
   var server = tws.createServer({

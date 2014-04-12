@@ -12,8 +12,9 @@ variables:
 * `NODE_ENV`
 * `PG_HOST`
 * `PG_DATABASE`
-* `PG_USER`
+* `PG_USERNAME`
 * `PG_PASSWORD`
+* `PG_PORT`
 * `LOG_LEVEL`
 
 These will be accessible from `process.env.$var` inside the node process
